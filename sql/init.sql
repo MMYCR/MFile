@@ -1,0 +1,35 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS `mfile` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `mfile`;
+
+-- 1. 用户表 (mfile_user)
+DROP TABLE IF EXISTS `mfile_user`;
+CREATE TABLE `mfile_user` (
+                              `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                              `username` varchar(50) NOT NULL COMMENT '用户名',
+                              `password` varchar(100) NOT NULL COMMENT '加密密码',
+                              `enable` tinyint(1) DEFAULT 1,
+                              `createtime` datetime DEFAULT NULL,
+                              `updatetime` datetime DEFAULT NULL,
+                              PRIMARY KEY (`id`),
+                              UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. 存储源表 (storage_source)
+DROP TABLE IF EXISTS `storage_source`;
+CREATE TABLE `storage_source` (
+                                  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                                  `enable` tinyint(1) DEFAULT 1,
+                                  `name` varchar(255) DEFAULT NULL,
+                                  `key` varchar(255) DEFAULT NULL,
+                                  `type` varchar(50) DEFAULT 'local',
+                                  `order_num` int(11) DEFAULT 0,
+                                  `root_path` varchar(1024) DEFAULT NULL,
+                                  `config_data` TEXT DEFAULT NULL,
+                                  `user_id` bigint(20) DEFAULT NULL,
+                                  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 3. 初始化管理员 (密码: 123456)
+INSERT INTO `mfile_user` (`username`, `password`, `enable`, `createtime`, `updatetime`)
+VALUES ('admin', '$2a$10$eF8p/AHIF0H17YqMILPeGO3CsNQuGjchmd1.v.VHNraP7pCuwvErG', 1, NOW(), NOW());

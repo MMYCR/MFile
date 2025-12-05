@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>登录/注册 - 私人网盘</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f7fa; font-family: 'Segoe UI', sans-serif; }
+        .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h2 { margin-top: 0; color: #333; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #007bff; }
+        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        .btn:hover { background: #0056b3; }
+        .link-btn { margin-top: 15px; font-size: 14px; color: #666; cursor: pointer; display: inline-block; }
+        .link-btn:hover { color: #007bff; text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="login-box">
+    <h2 id="title">🔒 请先登录</h2>
+
+    <input type="text" id="username" placeholder="用户名">
+    <input type="password" id="password" placeholder="密码">
+
+    <!-- 注册时才显示的确认密码框 -->
+    <input type="password" id="confirmPwd" placeholder="确认密码" style="display: none;">
+
+    <button onclick="submitForm()" id="submitBtn">登录</button>
+
+    <div>
+        <span class="link-btn" onclick="toggleMode()" id="toggleBtn">没有账号？去注册</span>
+    </div>
+</div>
+
+<script>
+    let isLoginMode = true; // 当前是否为登录模式
+
+    // 切换 登录/注册 界面
+    function toggleMode() {
+        isLoginMode = !isLoginMode;
+        const title = document.getElementById('title');
+        const submitBtn = document.getElementById('submitBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const confirmPwd = document.getElementById('confirmPwd');
+
+        if (isLoginMode) {
+            title.innerText = "🔒 请先登录";
+            submitBtn.innerText = "登录";
+            toggleBtn.innerText = "没有账号？去注册";
+            confirmPwd.style.display = "none";
+        } else {
+            title.innerText = "✨ 注册新用户";
+            submitBtn.innerText = "立即注册";
+            toggleBtn.innerText = "已有账号？去登录";
+            confirmPwd.style.display = "block";
+        }
+    }
+
+    function submitForm() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+            alert("请输入用户名和密码");
+            return;
+        }
+
+        if (isLoginMode) {
+            // === 登录逻辑 ===
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.code === 200) {
+                        localStorage.setItem('satoken', res.data); // 存 Token
+                        location.href = '/index.html';
+                    } else {
+                        alert("登录失败：" + res.message);
+                    }
+                });
+        } else {
+            // === 注册逻辑 ===
+            const confirm = document.getElementById('confirmPwd').value;
+            if (password !== confirm) {
+                alert("两次输入的密码不一致！");
+                return;
+            }
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.code === 200) {
+                        alert("注册成功！请登录");
+                        toggleMode(); // 切回登录模式
+                    } else {
+                        alert("注册失败：" + res.message);
+                    }
+                });
+        }
+    }
+</script>
+</body>
+</html>

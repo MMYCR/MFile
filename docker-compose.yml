@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # 1. 数据库 (自动开启)
+  mfile-mysql:
+    image: mysql:8.0
+    container_name: mfile-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mfile
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306" # 如果服务器3306被占用，把冒号左边改成 3307
+    networks:
+      - mfile-net
+
+  # 2. Redis (自动开启，内部名叫 mfile-redis)
+  mfile-redis:
+    image: redis:7.0
+    container_name: mfile-redis
+    restart: always
+    command: redis-server --requirepass 123456
+    ports:
+      - "6379:6379"
+    networks:
+      - mfile-net
+
+  # 3. Java 应用
+  mfile-app:
+    build: .
+    container_name: mfile-app
+    restart: always
+    ports:
+      - "80:8080" # 访问 http://公网IP 即可，不用加端口
+    depends_on:
+      - mfile-mysql
+      - mfile-redis
+    environment:
+      # 覆盖配置：连接 Docker 内部的 db 和 redis
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mfile-mysql:3306/mfile?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      # 👇 Redis 连接配置
+      - SPRING_DATA_REDIS_HOST=mfile-redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=123456
+      - SPRING_DATA_REDIS_DATABASE=0
+      # Sa-Token 配置
+      - SA_TOKEN_TOKEN_NAME=satoken
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - mfile-net
+
+networks:
+  mfile-net:
+    driver: bridge
