@@ -3,33 +3,54 @@ CREATE DATABASE IF NOT EXISTS `mfile` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8
 USE `mfile`;
 
 -- 1. 用户表 (mfile_user)
+
 DROP TABLE IF EXISTS `mfile_user`;
 CREATE TABLE `mfile_user` (
-                              `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                              `username` varchar(50) NOT NULL COMMENT '用户名',
-                              `password` varchar(100) NOT NULL COMMENT '加密密码',
-                              `enable` tinyint(1) DEFAULT 1,
-                              `createtime` datetime DEFAULT NULL,
-                              `updatetime` datetime DEFAULT NULL,
-                              PRIMARY KEY (`id`),
-                              UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `password` varchar(100) NOT NULL COMMENT '加密密码',
+  `enable` tinyint(1) DEFAULT 1 COMMENT '是否启用',
+  `createtime` datetime DEFAULT NULL,
+  `updatetime` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
+
 
 -- 2. 存储源表 (storage_source)
+
 DROP TABLE IF EXISTS `storage_source`;
 CREATE TABLE `storage_source` (
-                                  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                                  `enable` tinyint(1) DEFAULT 1,
-                                  `name` varchar(255) DEFAULT NULL,
-                                  `key` varchar(255) DEFAULT NULL,
-                                  `type` varchar(50) DEFAULT 'local',
-                                  `order_num` int(11) DEFAULT 0,
-                                  `root_path` varchar(1024) DEFAULT NULL,
-                                  `config_data` TEXT DEFAULT NULL,
-                                  `user_id` bigint(20) DEFAULT NULL,
-                                  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `enable` tinyint(1) DEFAULT 1 COMMENT '是否启用',
+  `name` varchar(255) DEFAULT NULL COMMENT '存储源名称',
+  `key` varchar(255) DEFAULT NULL COMMENT '存储源别名(唯一标识)',
+  `type` varchar(50) DEFAULT 'local' COMMENT '类型: local/aliyun',
+  `order_num` int(11) DEFAULT 0 COMMENT '排序号',
+  `root_path` varchar(1024) DEFAULT NULL COMMENT '本地存储根路径',
+  `config_data` TEXT DEFAULT NULL COMMENT 'OSS配置信息(JSON)',
+  `user_id` bigint(20) DEFAULT NULL COMMENT '归属用户ID',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='存储源配置表';
 
--- 3. 初始化管理员 (密码: 123456)
+-- 3. 分享链接表 (share_link) 
+
+DROP TABLE IF EXISTS `share_link`;
+CREATE TABLE `share_link` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(64) NOT NULL COMMENT '分享短码',
+  `storage_key` varchar(255) NOT NULL COMMENT '存储源Key',
+  `path` varchar(1024) NOT NULL COMMENT '文件路径',
+  `expire_time` datetime DEFAULT NULL COMMENT '过期时间',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件分享记录表';
+
+
+-- 4. 初始化数据
+
+-- 初始化管理员 (默认密码: 123456)
+-- 这里的密码是 BCrypt 加密后的密文
 INSERT INTO `mfile_user` (`username`, `password`, `enable`, `createtime`, `updatetime`)
 VALUES ('admin', '$2a$10$eF8p/AHIF0H17YqMILPeGO3CsNQuGjchmd1.v.VHNraP7pCuwvErG', 1, NOW(), NOW());
