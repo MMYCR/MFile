@@ -1,0 +1,70 @@
+# ==========================
+# Java & Maven (构建产物)
+# ==========================
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.class
+# 忽略打包好的 jar/war 包，只传源码
+*.jar
+*.war
+*.ear
+
+# ==========================
+# IDE & Editor (开发工具配置)
+# ==========================
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### VS Code ###
+.vscode/
+
+### Eclipse / STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# ==========================
+# OS Files (系统生成文件)
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Logs (运行日志)
+# ==========================
+logs/
+*.log
+
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+HELP.md
+
+src/main/resources/application-dev.properties
+
+.env

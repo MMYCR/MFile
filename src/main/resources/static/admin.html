@@ -1,0 +1,317 @@
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <title>后台管理 - 存储源设置</title>
+        <style>
+            body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f5f7fa; }
+            .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            h2, h3 { color: #333; }
+
+            /* 表格样式 */
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+            th { background-color: #fafafa; font-weight: 600; }
+
+            /* 按钮样式 */
+            .btn { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; color: white; margin-right: 5px; font-size: 14px; }
+            .btn-primary { background-color: #007bff; }
+            .btn-danger { background-color: #dc3545; }
+            .btn-edit { background-color: #28a745; }
+            .btn:hover { opacity: 0.9; }
+
+            /* 表单样式 */
+            .form-area { display: none; margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; background: #fdfdfd; padding: 20px; border-radius: 4px; }
+            .form-group { margin-bottom: 15px; }
+            .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; }
+            .form-group input, .form-group select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; }
+            .form-row { display: flex; gap: 20px; }
+            .form-row .form-group { flex: 1; }
+
+            .back-link { display: inline-block; margin-bottom: 15px; color: #666; text-decoration: none; }
+            .back-link:hover { color: #007bff; }
+        </style>
+    </head>
+    <body>
+
+    <div class="container">
+        <a href="/index.html" class="back-link">← 返回网盘首页</a>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>⚙️ 存储源管理</h2>
+            <button class="btn btn-primary" onclick="showForm()">+ 新增存储源</button>
+        </div>
+
+        <!-- 列表区域 -->
+        <table id="storageTable">
+            <thead>
+            <tr>
+                <th style="width: 50px">ID</th>
+                <th>名称</th>
+                <th>类型</th>
+                <th>别名(Key)</th>
+                <th>路径/Bucket</th>
+                <th style="width: 150px">操作</th>
+            </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+
+        <!-- 编辑/新增 表单区域 -->
+        <div id="formArea" class="form-area">
+            <h3 id="formTitle">新增/编辑</h3>
+            <input type="hidden" id="storageId">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>存储源名称</label>
+                    <input type="text" id="name" placeholder="例如：我的阿里云盘">
+                </div>
+                <div class="form-group">
+                    <label>存储类型</label>
+                    <!-- 🟢 核心：类型选择器 -->
+                    <select id="type" onchange="toggleTypeFields()">
+                        <option value="local">本地存储</option>
+                        <option value="aliyun">阿里云 OSS</option>
+                        <!-- <option value="tencent">腾讯云 COS</option> -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>URL 别名 (Key)</label>
+                    <input type="text" id="key" placeholder="例如：aliyun (用于浏览器地址栏)">
+                </div>
+                <div class="form-group">
+                    <label>排序号</label>
+                    <input type="number" id="orderNum" value="0">
+                </div>
+            </div>
+
+            <!-- 🟢 动态区域 A：本地存储参数 -->
+            <div id="localFields">
+                <div class="form-group">
+                    <label>本地根目录路径</label>
+                    <input type="text" id="rootPath" placeholder="例如：D:/Movies">
+                </div>
+            </div>
+
+            <!-- 🟢 动态区域 B：对象存储参数 (默认隐藏) -->
+            <div id="s3Fields" style="display: none; background: #f0f7ff; padding: 15px; border-radius: 4px;">
+                <div class="form-group">
+                    <label>Endpoint (地域节点)</label>
+                    <input type="text" id="s3Endpoint" placeholder="例如：oss-cn-shanghai.aliyuncs.com">
+                </div>
+                <div class="form-group">
+                    <label>Bucket Name (桶名称)</label>
+                    <input type="text" id="s3Bucket" placeholder="例如：my-zfile-drive">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>AccessKey ID</label>
+                        <input type="text" id="s3Ak" placeholder="RAM 子账号 AK">
+                    </div>
+                    <div class="form-group">
+                        <label>AccessKey Secret</label>
+                        <input type="text" id="s3Sk" placeholder="RAM 子账号 SK">
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveStorage()">保存配置</button>
+                <button class="btn" style="background:#666" onclick="hideForm()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 拦截器 (复用之前的，带 Token)
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            const token = localStorage.getItem('satoken');
+            options = options || {};
+            options.headers = options.headers || {};
+            if (token) {
+                if (options.headers instanceof Headers) options.headers.append('satoken', token);
+                else options.headers['satoken'] = token;
+            }
+            // 默认发 JSON
+            if (!options.headers['Content-Type'] && (!options.method || options.method !== 'GET')) {
+                options.headers['Content-Type'] = 'application/json';
+            }
+            return originalFetch(url, options).then(res => {
+                if (res.status === 401) {
+                    location.href = '/login.html';
+                    return Promise.reject("未登录");
+                }
+                return res;
+            });
+        };
+
+        window.onload = loadList;
+
+        // 2. 加载列表
+        function loadList() {
+            fetch('/api/admin/storage/list')
+                .then(res => res.json())
+                .then(res => {
+                    const tbody = document.getElementById('tbody');
+                    tbody.innerHTML = '';
+                    res.data.forEach(item => {
+                        // 解析一下 configData 为了展示 Bucket 名
+                        let displayPath = item.rootPath;
+                        if (item.type === 'aliyun' && item.configData) {
+                            try {
+                                const conf = JSON.parse(item.configData);
+                                displayPath = `[Bucket] ${conf.bucketName}`;
+                            } catch(e){}
+                        }
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.name}</td>
+                                <td><span style="background:#eee; padding:2px 6px; border-radius:3px; font-size:12px">${item.type}</span></td>
+                                <td>${item.key}</td>
+                                <td>${displayPath || '-'}</td>
+                                <td>
+                                    <button class="btn btn-edit" onclick="editStorage(${item.id})">编辑</button>
+                                    <button class="btn btn-danger" onclick="delStorage(${item.id})">删除</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // 3. 切换表单显示 (本地 vs S3)
+        function toggleTypeFields() {
+            const type = document.getElementById('type').value;
+            if (type === 'local') {
+                document.getElementById('localFields').style.display = 'block';
+                document.getElementById('s3Fields').style.display = 'none';
+            } else {
+                document.getElementById('localFields').style.display = 'none';
+                document.getElementById('s3Fields').style.display = 'block';
+            }
+        }
+
+        function showForm() {
+            document.getElementById('formArea').style.display = 'block';
+            document.getElementById('storageId').value = '';
+            document.getElementById('formTitle').innerText = '新增存储源';
+
+            // 清空表单
+            document.getElementById('name').value = '';
+            document.getElementById('key').value = '';
+            document.getElementById('orderNum').value = '0';
+            document.getElementById('rootPath').value = '';
+            document.getElementById('s3Endpoint').value = '';
+            document.getElementById('s3Bucket').value = '';
+            document.getElementById('s3Ak').value = '';
+            document.getElementById('s3Sk').value = '';
+
+            // 默认选本地
+            document.getElementById('type').value = 'local';
+            toggleTypeFields();
+        }
+
+        function hideForm() {
+            document.getElementById('formArea').style.display = 'none';
+        }
+
+        // 4. 编辑回显
+        function editStorage(id) {
+            fetch('/api/admin/storage/info/' + id)
+                .then(res => res.json())
+                .then(res => {
+                    const data = res.data;
+                    showForm();
+                    document.getElementById('formTitle').innerText = '编辑存储源';
+                    document.getElementById('storageId').value = data.id;
+                    document.getElementById('name').value = data.name;
+                    document.getElementById('key').value = data.key;
+                    document.getElementById('orderNum').value = data.orderNum;
+
+                    // 下拉框赋值
+                    // 注意：后端返回的 type 是枚举对象，可能变成了 "ALIYUN" 或 "LOCAL"
+                    // 我们的 option value 是 "aliyun" / "local"
+                    // 所以要做个转换
+                    let typeVal = (data.type.code || data.type).toLowerCase(); // 兼容直接返回字符串或枚举对象
+                    document.getElementById('type').value = typeVal;
+
+                    toggleTypeFields();
+
+                    if (typeVal === 'local') {
+                        document.getElementById('rootPath').value = data.rootPath;
+                    } else {
+                        // 解析 JSON 填充到 S3 表单
+                        if (data.configData) {
+                            try {
+                                const conf = JSON.parse(data.configData);
+                                document.getElementById('s3Endpoint').value = conf.endpoint || '';
+                                document.getElementById('s3Bucket').value = conf.bucketName || '';
+                                document.getElementById('s3Ak').value = conf.accessKey || '';
+                                document.getElementById('s3Sk').value = conf.secretKey || '';
+                            } catch (e) {
+                                console.error("JSON解析失败", e);
+                            }
+                        }
+                    }
+                });
+        }
+
+        // 5. 保存 (核心逻辑：自动打包 JSON)
+        function saveStorage() {
+            const type = document.getElementById('type').value;
+
+            const data = {
+                id: document.getElementById('storageId').value || null,
+                name: document.getElementById('name').value,
+                key: document.getElementById('key').value,
+                orderNum: document.getElementById('orderNum').value,
+                type: type // 传给后端，后端枚举会自动匹配 "local" 或 "aliyun"
+            };
+
+            if (type === 'local') {
+                data.rootPath = document.getElementById('rootPath').value;
+                data.configData = ''; // 本地不需要 config
+            } else {
+                // S3: 打包成 JSON
+                const s3Config = {
+                    endpoint: document.getElementById('s3Endpoint').value,
+                    bucketName: document.getElementById('s3Bucket').value,
+                    accessKey: document.getElementById('s3Ak').value,
+                    secretKey: document.getElementById('s3Sk').value
+                };
+                data.configData = JSON.stringify(s3Config);
+                data.rootPath = ''; // S3 不需要 rootPath
+            }
+
+            fetch('/api/admin/storage/save', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            }).then(res => res.json()).then(res => {
+                if (res.code === 200) {
+                    alert("保存成功");
+                    hideForm();
+                    loadList();
+                } else {
+                    alert("保存失败：" + res.message);
+                }
+            });
+        }
+
+        function delStorage(id) {
+            if (!confirm('确定删除吗？')) return;
+            fetch('/api/admin/storage/delete/' + id, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.code === 200) loadList();
+                    else alert(res.message);
+                });
+        }
+    </script>
+    </body>
+    </html>

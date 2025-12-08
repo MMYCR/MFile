@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # 1. 数据库
+  mfile-mysql:
+    image: mysql:8.0
+    container_name: mfile-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PWD}
+      MYSQL_DATABASE: mfile
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    networks:
+      - mfile-net
+
+  # 2. Redis
+  mfile-redis:
+    image: redis:7.0
+    container_name: mfile-redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PWD}
+    ports:
+      - "6379:6379"
+    networks:
+      - mfile-net
+
+  # 3. Java 应用
+  mfile-app:
+    build: .
+    container_name: mfile-app
+    restart: always
+    ports:
+      - "80:8080"
+    depends_on:
+      - mfile-mysql
+      - mfile-redis
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mfile-mysql:3306/mfile?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_PWD}
+
+      - SPRING_DATA_REDIS_HOST=mfile-redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PWD}
+      - SPRING_DATA_REDIS_DATABASE=0
+
+      - SA_TOKEN_TOKEN_NAME=satoken
+      - SA_TOKEN_JWT_SECRET_KEY=${JWT_SECRET}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - mfile-net
+
+networks:
+  mfile-net:
+    driver: bridge
