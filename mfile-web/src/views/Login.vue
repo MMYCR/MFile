@@ -101,7 +101,7 @@ const handleSubmit = async () => {
         username: form.value.username,
         password: form.value.password
       })
-      localStorage.setItem('satoken', token as string)
+      localStorage.setItem('satoken', token as unknown as string)
       ElMessage.success('登录成功')
       router.push('/')
     }

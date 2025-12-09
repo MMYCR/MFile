@@ -31,7 +31,7 @@ const router = createRouter({
 })
 
 // 没有 Token 严禁访问主页
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     const token = localStorage.getItem('satoken')
 
     if (to.path === '/login' || to.path.startsWith('/s/')) {
