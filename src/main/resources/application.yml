@@ -1,3 +1,4 @@
+
 sa-token:
   token-name: satoken
   # token有效期，单位s 默认30天, -1代表永不过期

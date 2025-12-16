@@ -6,7 +6,7 @@ import java.io.Serializable;
     //统一JSON响应结果
 public class AjaxJson<T> implements Serializable {
     //请求是否成功
-    private Boolean success = true; // 修改为Boolean包装类型
+    private Boolean success = true;
 
     //状态码
     private int code = 200;
@@ -46,7 +46,7 @@ public class AjaxJson<T> implements Serializable {
 
     public static <T> AjaxJson<T> getError(String message) {
         AjaxJson<T> ajaxJson = new AjaxJson<>();
-        ajaxJson.setSuccess(false); // 仍然使用 setSuccess
+        ajaxJson.setSuccess(false);
         ajaxJson.setMessage(message);
         ajaxJson.setCode(500); // 默认错误码
         return ajaxJson;
@@ -54,7 +54,7 @@ public class AjaxJson<T> implements Serializable {
 
     public static <T> AjaxJson<T> getError(int code, String message) {
         AjaxJson<T> ajaxJson = new AjaxJson<>();
-        ajaxJson.setSuccess(false); // 仍然使用 setSuccess
+        ajaxJson.setSuccess(false);
         ajaxJson.setMessage(message);
         ajaxJson.setCode(code);
         return ajaxJson;

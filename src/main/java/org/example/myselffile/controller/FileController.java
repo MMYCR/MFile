@@ -56,7 +56,6 @@ public class FileController {
                 return AjaxJson.getError(403, "该文件夹需要密码");
             }
         }
-
         //  构造缓存 Key
         String cacheKey = "files:" + (storageKey == null ? "default" : storageKey) + ":" + path;
 

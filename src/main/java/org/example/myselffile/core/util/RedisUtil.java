@@ -27,12 +27,10 @@ public class RedisUtil {
      * @return 结果对象
      */
     public <T> T get(String key, Class<T> clazz, Supplier<T> dbQuery, long expireSeconds) {
-        // 1. 先查 Redis
         String json = redisTemplate.opsForValue().get(key);
 
-        // 2. 如果命中
         if (json != null) {
-            // 🛡️ 防穿透：如果是空对象标记 "{}"，直接返回 null
+            // 🛡 防穿透：如果是空对象标记 "{}"，直接返回 null
             if ("{}".equals(json)) {
                 return null;
             }
@@ -43,32 +41,27 @@ public class RedisUtil {
             }
         }
 
-        // 3. Redis 没有，查数据库 (双检锁/互斥锁 可在这里扩展防击穿，这里先做简单版)
+        //  Redis 没有，查数据库
         T result = dbQuery.get();
 
-        // 4. 写入 Redis
         if (result != null) {
             try {
                 String value = mapper.writeValueAsString(result);
-                // 🛡️ 防雪崩：给过期时间加一个随机值 (0~10%)
+                //  防雪崩：给过期时间加一个随机值 (0~10%)
                 long randomJitter = (long) (Math.random() * (expireSeconds * 0.1));
                 redisTemplate.opsForValue().set(key, value, expireSeconds + randomJitter, TimeUnit.SECONDS);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
         } else {
-            // 🛡️ 防穿透：数据库也没有，写入空对象 "{}"，过期时间设短一点 (比如 60秒)
+            //  防穿透：数据库也没有，写入空对象 "{}"
             redisTemplate.opsForValue().set(key, "{}", 60, TimeUnit.SECONDS);
         }
 
         return result;
     }
 
-    // 专门处理 List 类型
     public <T> T getList(String key, Class<?> contentClass, Supplier<T> dbQuery, long expireSeconds) {
-        // 逻辑类似上面的 get，只是反序列化 List 时要用 mapper.getTypeFactory().constructCollectionType
-        // 为了代码简洁，这里略写，面试重点讲上面的 get 逻辑即可。
-        // 实际开发中，可以直接用上面的 get，把 List 包装在一个 Result 对象里存进去更方便。
         return null;
     }
 

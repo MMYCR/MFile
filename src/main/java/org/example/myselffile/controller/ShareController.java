@@ -35,8 +35,7 @@ public class ShareController {
         share.setExpireTime(new Date(System.currentTimeMillis() + days * 24L * 60 * 60 * 1000));
 
         shareLinkMapper.insert(share);
-
-        return AjaxJson.getSuccessData("http://localhost:5173/s/" + share.getUuid());
+        return AjaxJson.getSuccessData(share.getUuid());
     }
 
     //  获取分享文件的下载链接

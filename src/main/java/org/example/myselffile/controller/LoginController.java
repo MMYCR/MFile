@@ -58,7 +58,6 @@ public class LoginController {
      */
     @PostMapping("/register")
     public AjaxJson<Void> register(@RequestBody @Validated UserLoginRequest req) {
-        // 复用 UserLoginRequest 接参数，或者你也可以新建一个 UserRegisterRequest
         userService.register(req.getUsername(), req.getPassword());
         return AjaxJson.getSuccess("注册成功");
     }
@@ -69,10 +68,7 @@ public class LoginController {
      */
     @PostMapping("/user/update-pwd")
     public AjaxJson<Void> updatePassword(@RequestBody @Validated UpdateUserPasswordRequest req) {
-        // 1. 获取当前登录用户 ID (Sa-Token)
         long userId = StpUtil.getLoginIdAsLong();
-
-        // 2. 调用 Service
         userService.updatePwById(userId, req);
 
         return AjaxJson.getSuccess("密码修改成功");

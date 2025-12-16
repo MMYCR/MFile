@@ -22,19 +22,19 @@ public class StorageSourceContext {
     private StorageSourceMapper storageSourceMapper;
 
     @Autowired
-    private StringRedisTemplate redisTemplate; // 🟢 引入 Redis
+    private StringRedisTemplate redisTemplate;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public StorageStrategy getService(String storageKey) {
         long currentUserId = StpUtil.getLoginIdAsLong();
 
-        // 🟢 构造缓存 Key： config:userId:storageKey
+        //  构造缓存 Key： config:userId:storageKey
         String cacheKey = "config:" + currentUserId + ":" + (storageKey == null ? "default" : storageKey);
 
         StorageSource source = null;
 
-        // 🟢 1. 查缓存
+        //  查缓存
         String json = redisTemplate.opsForValue().get(cacheKey);
         if (json != null) {
             try {
@@ -45,7 +45,7 @@ public class StorageSourceContext {
             }
         }
 
-        // 🟢 2. 缓存没命中，查数据库
+        //  缓存没命中，查数据库
         if (source == null) {
             LambdaQueryWrapper<StorageSource> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(StorageSource::getEnable, true);
@@ -57,7 +57,7 @@ public class StorageSourceContext {
             }
             source = storageSourceMapper.selectOne(wrapper);
 
-            // 🟢 3. 写回缓存 (30分钟过期)
+            //  写回缓存 (30分钟过期)
             try {
                 if (source != null) {
                     redisTemplate.opsForValue().set(cacheKey, mapper.writeValueAsString(source), 30, TimeUnit.MINUTES);
@@ -72,7 +72,7 @@ public class StorageSourceContext {
             throw new RuntimeException("存储源不存在或无权访问");
         }
 
-        // 🟢 4. 实例化 Service (保持原逻辑)
+        // 实例化 Service
         StorageStrategy service;
         if (StorageTypeEnum.LOCAL == source.getType()) {
             service = new LocalFileService();

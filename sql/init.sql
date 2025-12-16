@@ -30,6 +30,20 @@ CREATE TABLE `storage_source` (
                                   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 3. 初始化管理员 (密码: 123456)
-INSERT INTO `mfile_user` (`username`, `password`, `enable`, `createtime`, `updatetime`)
-VALUES ('admin', '$2a$10$eF8p/AHIF0H17YqMILPeGO3CsNQuGjchmd1.v.VHNraP7pCuwvErG', 1, NOW(), NOW());
+-- 3. 分享链接表 (share_link)
+DROP TABLE IF EXISTS `share_link`;
+CREATE TABLE `share_link` (
+                              `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                              `uuid` varchar(50) NOT NULL COMMENT '短链接码',
+                              `storage_key` varchar(50) DEFAULT NULL COMMENT '存储源Key',
+                              `path` varchar(1024) DEFAULT NULL COMMENT '文件路径',
+                              `expire_time` datetime DEFAULT NULL COMMENT '过期时间',
+                              `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+                              PRIMARY KEY (`id`),
+                              UNIQUE KEY `uk_uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. 初始化管理员 (密码: 123456)
+-- 显式指定 ID=1，确保如果有默认存储源能关联上
+INSERT INTO `mfile_user` (`id`, `username`, `password`, `enable`, `createtime`, `updatetime`)
+VALUES (1, 'admin', '$2a$10$eF8p/AHIF0H17YqMILPeGO3CsNQuGjchmd1.v.VHNraP7pCuwvErG', 1, NOW(), NOW());

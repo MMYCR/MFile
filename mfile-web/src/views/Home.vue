@@ -324,16 +324,39 @@ const handleRowClick = (row: any) => {
 }
 
 const handleShare = (row: any) => {
-  ElMessageBox.confirm(`创建 "${row.name}" 的分享链接？`, '分享', { confirmButtonText: '生成' })
-      .then(async () => {
-        const res: any = await request.post('/share/create', null, {
-          params: { storageKey: currentStorageKey.value, path: row.path, days: 1 }
-        })
-        ElMessageBox.alert(res, '链接已生成', {
-          confirmButtonText: '复制',
-          callback: () => navigator.clipboard.writeText(res)
-        })
+  ElMessageBox.confirm(`确定要为 "${row.name}" 创建有效期 1 天的分享链接吗？`, '创建分享', {
+    confirmButtonText: '生成链接',
+    cancelButtonText: '取消'
+  }).then(async () => {
+    try {
+      // 后端返回的 uuid
+      const uuid: any = await request.post('/share/create', null, {
+        params: {
+          storageKey: currentStorageKey.value,
+          path: row.path,
+          days: 1
+        }
       })
+
+      // 前端自动拼接当前域名 + /s/ + uuid
+      const fullLink = `${window.location.origin}/s/${uuid}`
+
+      ElMessageBox.alert(
+          `<div style="word-break: break-all;">${fullLink}</div>`,
+          '🎉 分享链接已生成',
+          {
+            dangerouslyUseHTMLString: true,
+            confirmButtonText: '复制并关闭',
+            callback: () => {
+              navigator.clipboard.writeText(fullLink)
+              ElMessage.success('已复制到剪贴板')
+            }
+          }
+      )
+    } catch (e) {
+      ElMessage.error('生成失败')
+    }
+  })
 }
 
 const handleMkdir = () => {

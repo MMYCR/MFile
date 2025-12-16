@@ -28,7 +28,6 @@ public class GlobalExceptionHandler {
             String message = e.getErrorCode().getMessage();
 
             // 如果有动态参数 (args)，使用 MessageFormat 进行格式化
-            // 例如消息是 "用户 {0} 不存在"，参数是 ["admin"]，格式化后变成 "用户 admin 不存在"
             if (e.getArgs() != null && e.getArgs().length > 0) {
                 try {
                     message = MessageFormat.format(message, e.getArgs());

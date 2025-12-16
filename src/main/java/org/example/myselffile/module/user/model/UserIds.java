@@ -8,6 +8,6 @@ public class UserIds {
     // 超级管理员 ID
     public static final Long ADMIN_ID = 1L;
 
-    // 新用户模板 ID (如果后面要用的话)
+    // 新用户模板 ID
     public static final Long NEW_USER_TEMPLATE_ID = -2L;
 }

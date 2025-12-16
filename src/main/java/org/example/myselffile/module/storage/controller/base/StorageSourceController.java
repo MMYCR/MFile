@@ -25,7 +25,7 @@ public class StorageSourceController {
 
         List<StorageSource> list = storageSourceMapper.selectList(
                 new LambdaQueryWrapper<StorageSource>()
-                        .eq(StorageSource::getUserId, currentUserId) // 🟢 关键：只查自己的
+                        .eq(StorageSource::getUserId, currentUserId)
                         .orderByAsc(StorageSource::getOrderNum)
         );
         return AjaxJson.getSuccessData(list);
